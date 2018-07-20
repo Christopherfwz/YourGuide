@@ -6,6 +6,7 @@ from leancloud import LeanEngineError
 from cloud_mainPage import mainPage_engine
 from cloud_travelNote import travelNote_engine
 from cloud_userInfo import cloud_userInfo
+from datetime import datetime
 
 engine = Engine(get_wsgi_application())
 engine.register(mainPage_engine)
@@ -19,6 +20,11 @@ def hello(**params):
     else:
         return 'Hello, LeanCloud!'
 
+@engine.define
+def date(**params):
+    return {
+        "date": datetime.now()
+    }
 
 @engine.before_save('Todo')
 def before_todo_save(todo):
