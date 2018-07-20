@@ -85,12 +85,12 @@ def getUserInfo(**params):
             "id": str(j.id),
             "image": pics[0],
             "title": j.get("title"),
-            "nickname": user.get("username"),
+            "nickname": user.get("nickname"),
             "avatar": avatar_url,
             "favNum": j.get("like"),
             "replyNum": commentNum,
             "price": j.get("spend"),
-            "date": str(j.get("createdAt")),
+            "date": j.get("createdAt").strftime("%Y-%m-%d %H:%M:%S"),
         })
 
     favorites = []
@@ -143,12 +143,12 @@ def getUserInfo(**params):
             "id": str(travelNote.id),
             "image": pics[0],
             "title": travelNote.get("title"),
-            "nickname": user.get("username"),
+            "nickname": user.get("nickname"),
             "avatar": avatar_url,
             "favNum": travelNote.get("like"),
             "replyNum": commentNum,
             "price": travelNote.get("spend"),
-            "date": str(travelNote.get("createdAt")),
+            "date": travelNote.get("createdAt").strftime("%Y-%m-%d %H:%M:%S"),
         })
 
     result = {
@@ -230,7 +230,7 @@ def getReceivedLike(**params):
                 "id": str(k.id),  # 赞的id
                 "image": pics[0],  # 你游记的图片，或者你评论的那个游记的图片，
                 "title": title,  # 同上的那个游记的标题
-                "nickname": user.get("username"),  # 赞的人的名字，
+                "nickname": user.get("nickname"),  # 赞的人的名字，
                 "avatar": avatar_url,  # 赞的人的头像
                 "time": k.get("createdAt").strftime("%Y-%m-%d %H:%M:%S"),  # 赞的时间
                 "publishTime": publishTime.strftime("%Y-%m-%d %H:%M:%S"),  # 同上的那个游记的发布时间
@@ -297,7 +297,7 @@ def getReceivedLike(**params):
                 "id": str(k.id),  # 赞的id
                 "image": pics[0],  # 你游记的图片，或者你评论的那个游记的图片，
                 "title": title,  # 同上的那个游记的标题
-                "nickname": user.get("username"),  # 赞的人的名字，
+                "nickname": user.get("nickname"),  # 赞的人的名字，
                 "avatar": avatar_url,  # 赞的人的头像
                 "time": k.get("createdAt").strftime("%Y-%m-%d %H:%M:%S"),  # 赞的时间
                 "publishTime": publishTime.strftime("%Y-%m-%d %H:%M:%S"),  # 同上的那个游记的发布时间
@@ -377,7 +377,7 @@ def getReceivedComment(**params):
                 "id": str(k.id),  # 评论的id
                 "image": pics[0],  # 你游记的图片，或者你评论的那个游记的图片，
                 "title": title,  # 同上的那个游记的标题
-                "nickname": user.get("username"),  # 评论的人的名字，
+                "nickname": user.get("nickname"),  # 评论的人的名字，
                 "avatar": avatar_url,  # 评论的人的头像
                 "time": k.get("createdAt").strftime("%Y-%m-%d %H:%M:%S"),  # 评论的时间
                 "publishTime": publishTime.strftime("%Y-%m-%d %H:%M:%S"),  # 同上的那个游记的发布时间
@@ -495,7 +495,7 @@ def getGuideInfo(**params):
                 "favNum": j.get("like"),
                 "replyNum": commentNum,
                 "price": j.get("spend"),
-                "date": [str(j.get("startDate")), str(j.get("endDate"))]
+                "date": [j.get("startDate").strftime("%Y-%m-%d %H:%M:%S"), j.get("endDate").strftime("%Y-%m-%d %H:%M:%S")]
             })
 
         result = {
@@ -559,7 +559,7 @@ def getFullInfo(**params):
         guide_id = i.id  # 导游id
         introduction = i.get("about")
         max_num = i.get("max_num")
-        price = [i.get("price_low"), i.get("price_high")]
+        price = i.get("price")
         city = i.get("area")
         sightseeings = []
         sightseeing_names = []

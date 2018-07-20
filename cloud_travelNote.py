@@ -66,7 +66,7 @@ def getTravelNoteList(**params):
         query.less_than("createdAt", datetime.datetime(current_year, month_high, 1, 0, 0, 0))
     # 添加精品条件(大于100的都是精品)
     elif type == 'boutique':
-        query.greater_than_or_equal_to("like", 100)
+        query.greater_than_or_equal_to("fav", 100)
     # 否则两个条件都不生效
     else:
         pass
@@ -77,7 +77,7 @@ def getTravelNoteList(**params):
         query.add_descending("createdAt")
     # 收藏多
     elif order_by == 2:
-        query.add_descending("like")
+        query.add_descending("fav")
 
     # 游记的日期范围，包含查询
     if date != None:
@@ -160,16 +160,27 @@ def getTravelNoteList(**params):
         query_list = query.find()
         commentNum = len(query_list)
 
+        #查询收藏数量
+        TravelNoteFav = leancloud.Object.extend('TravelNoteFav')
+        query = TravelNoteFav.query
+        query.equal_to("TravelNote", i)
+        query_list = query.find()
+        favNum = len(query_list)
+
+        i.set("like",favNum)
+        i.save()
+
+
         array.append({
             "id": str(i.id),
             "image": pics[0],
             "title": i.get("title"),
-            "nickname": user.get("username"),
+            "nickname": user.get("nickname"),
             "avatar": avatar_url,
-            "favNum": i.get("like"),
+            "favNum": favNum,
             "replyNum": commentNum,
             "price": i.get("spend"),
-            "date": str(i.get("createdAt")),
+            "date": i.get("createdAt").strftime("%Y-%m-%d %H:%M:%S"),
         })
 
     result = {
@@ -271,39 +282,44 @@ def getTravelNoteContent(**params):
     query.include("createAt")
     query_list = query.find()
     comments = []
-    # for i in query_list:
-    #     User = leancloud.Object.extend("_User")
-    #     user = User.create_without_data(i.get("comment_user").id)
-    #     user.fetch()
-    #     avatar = user.get("avatar")
-    #     if avatar:
-    #         avatar_url = avatar.url
-    #     else:
-    #         avatar_url = None
-    #     authorid = user.id
-    #     nickname = user.get("nickname")
-    #     avatar = avatar_url
-    #
-    #     # 查询评论是否被自己点赞
-    #     CommentLike = leancloud.Object.extend('CommentLike')
-    #     query = CommentLike.query
-    #     query.equal_to("comment", i)
-    #     query.equal_to("likeUser", current_user)
-    #     query_list = query.find()
-    #     if len(query_list) <= 0:
-    #         isLiked = False
-    #     else:
-    #         isLiked = True
-    #
-    #     comments.append({
-    #         "id": i.id,
-    #         "avatar": avatar,
-    #         "nickname": nickname,
-    #         "date": datetime.datetime.now(),
-    #         "likeNum": 0,
-    #         "content": i.get("content"),
-    #         "isLiked": isLiked
-    #     })
+    for i in query_list:
+        User = leancloud.Object.extend("_User")
+        user = User.create_without_data(i.get("comment_user").id)
+        user.fetch()
+        avatar = user.get("avatar")
+        if avatar:
+            avatar_url = avatar.url
+        else:
+            avatar_url = None
+        authorid = user.id
+        nickname = user.get("nickname")
+        avatar = avatar_url
+
+        # 查询评论是否被自己点赞
+        CommentLike = leancloud.Object.extend('CommentLike')
+        query = CommentLike.query
+        query.equal_to("comment", i)
+        query_list = query.find()
+        likeNum = len(query_list)
+        CommentLike = leancloud.Object.extend('CommentLike')
+        query = CommentLike.query
+        query.equal_to("comment", i)
+        query.equal_to("likeUser", current_user)
+        query_list = query.find()
+        if len(query_list) <= 0:
+            isLiked = False
+        else:
+            isLiked = True
+
+        comments.append({
+            "id": i.id,
+            "avatar": avatar,
+            "nickname": nickname,
+            "date": i.get("createdAt").strftime("%Y-%m-%d %H:%M:%S"),
+            "likeNum": likeNum,
+            "content": i.get("content"),
+            "isLiked": isLiked
+        })
 
     result = {
         "id": id,
@@ -440,16 +456,26 @@ def getTravelNoteFromFollowee(**params):
                 query_list = query.find()
                 commentNum = len(query_list)
 
+                # 查询收藏数量
+                TravelNoteFav = leancloud.Object.extend('TravelNoteFav')
+                query = TravelNoteFav.query
+                query.equal_to("TravelNote", i)
+                query_list = query.find()
+                favNum = len(query_list)
+
                 array.append({
                     "id": str(j.id),
-                    "image": pics[0],
+                    "image": pics,
                     "title": j.get("title"),
                     "nickname": user.get("nickname"),
                     "avatar": avatar_url,
-                    "favNum": j.get("like"),
+                    "favNum": favNum,
                     "replyNum": commentNum,
                     "price": j.get("spend"),
-                    "date": str(j.get("createdAt")),
+                    "date": j.get("createdAt").strftime("%Y-%m-%d %H:%M:%S"),
+                    "abstract": "XXXXXXX",#TODO
+                    "city": j.get("area")
+
                 })
 
         result = {
@@ -512,6 +538,8 @@ def favTravelNote(**params):
         travelNoteFav.set("TravelNote", travelNote)
         travelNoteFav.set("favUser", current_user)
         travelNoteFav.save()
+        travelNote.set("fav",travelNote.get("fav")+1)
+        travelNote.save()
     elif like == 'false':
         travelNoteFav = TravelNoteFav()
         query = TravelNoteFav.query
@@ -520,6 +548,8 @@ def favTravelNote(**params):
         query_list = query.find()
         for i in query_list:
             i.destroy()
+        travelNote.set("fav",travelNote.get("fav")-1)
+        travelNote.save()
     else:
         return {
             "status": -1,
@@ -609,7 +639,7 @@ def getAttraction(**params):
             "title": i.get("title"),
             "price": i.get("price"),
             "recommend_num": i.get("recommend_num"),
-            "image": i.get("image"),
+            "image": i.get("image").url,
             "travel_note_num": i.get("travel_note_num"),
         })
     result = {
