@@ -29,7 +29,7 @@ def getUserInfo(**params):
     nickname = user.get("nickname")
     city = user.get("city")
     level = user.get("level")
-    intro = user.get("intro")
+    intro = user.get("introduction")
     is_guide = user.get("is_guide")
 
     if avatar:
@@ -152,7 +152,7 @@ def getUserInfo(**params):
         })
 
     result = {
-        "avator": avatar_url,
+        "avatar": avatar_url,
         "nickname": nickname,
         "city": city,
         "level": level,

@@ -12,22 +12,21 @@ import datetime
 import requests
 import json
 
-
 travelNote_engine = Engine(get_wsgi_application())
 
 
 @travelNote_engine.define
 def getTravelNoteList(**params):
     try:
-        city = params.get('city','')
-        keyword = params.get('keyword','') # optional
+        city = params.get('city', '')
+        keyword = params.get('keyword', '')  # optional
         type = params.get('type', '')  # optional
         order_by = params.get('order_by', -1)  # optional
         category = params.get('category', '')  # optional
         page = params.get('page', -1)  # optional
         # # sightseeings = json.loads(params.get('sightseeings'))
-        date = json.loads(params.get('date','null')) # optional
-        spend = json.loads(params.get('spend','null')) # optional
+        date = json.loads(params.get('date', 'null'))  # optional
+        spend = json.loads(params.get('spend', 'null'))  # optional
     except:
         raise LeanEngineError(501, 'Invalid argument.')
 
@@ -56,7 +55,7 @@ def getTravelNoteList(**params):
         query2 = TravelNote.query
         query1.contains("title", keyword)
         query2.contains("content", keyword)
-        query = leancloud.Query.or_(query1,query2)
+        query = leancloud.Query.or_(query1, query2)
 
     if city != '':
         query.equal_to("area", city)
@@ -100,13 +99,13 @@ def getTravelNoteList(**params):
     if category != '':
         TravelNoteTag = leancloud.Object.extend('TravelNoteTag')
         query = TravelNoteTag.query
-        query.equal_to("name",category)
+        query.equal_to("name", category)
         query_list = query.find()
         TravelNoteTagMap = leancloud.Object.extend('TravelNoteTagMap')
         query = TravelNoteTagMap.query
 
         if len(query_list) != 0:
-            query.equal_to("travelNoteTag",query_list[0])
+            query.equal_to("travelNoteTag", query_list[0])
             query_list = query.find()
         else:
             query_list = []
@@ -125,7 +124,7 @@ def getTravelNoteList(**params):
         pics = []
         content = i.get("content")
         if content != None:
-        # picUrls_pre = re.findall('!\[.*?\]\(.*?\)', str(i.get("content"))) #MD的正则表达式
+            # picUrls_pre = re.findall('!\[.*?\]\(.*?\)', str(i.get("content"))) #MD的正则表达式
             picUrls_pre = re.findall('<img.*?>', content)  # html的提取img标签的正则表达式
         else:
             picUrls_pre = []
@@ -198,8 +197,8 @@ def getTravelNoteContent(**params):
     # 查询是否收藏
     TravelNoteFav = leancloud.Object.extend('TravelNoteFav')
     query = TravelNoteFav.query
-    query.equal_to("TravelNote",travel)
-    query.equal_to("favUser",current_user)
+    query.equal_to("TravelNote", travel)
+    query.equal_to("favUser", current_user)
     query_list = query.find()
     if len(query_list) <= 0:
         isFaved = False
@@ -239,7 +238,7 @@ def getTravelNoteContent(**params):
     }
 
     # 查询行程信息
-    date = (travel.get("startDate").strftime("%Y-%m-%d %H:%M:%S"),travel.get("endDate").strftime("%Y-%m-%d %H:%M:%S"))
+    date = (travel.get("startDate").strftime("%Y-%m-%d %H:%M:%S"), travel.get("endDate").strftime("%Y-%m-%d %H:%M:%S"))
     peopleNum = travel.get("peopleNum")
     theme = travel.get("theme")
     spend = travel.get("spend")
@@ -267,45 +266,47 @@ def getTravelNoteContent(**params):
     # 查询comment数量
     Comment = leancloud.Object.extend("Comment")
     query = Comment.query
-    query.equal_to("travelNote", travel)
+    query.equal_to("TravelNote", travel)
+    query.include("thumbs")
+    query.include("createAt")
     query_list = query.find()
     comments = []
-    for i in query_list:
-        User = leancloud.Object.extend("_User")
-        user = User.create_without_data(i.get("comment_user").id)
-        user.fetch()
-        avatar = user.get("avatar")
-        if avatar:
-            avatar_url = avatar.url
-        else:
-            avatar_url = None
-        authorid = user.id
-        nickname = user.get("nickname")
-        avatar = avatar_url
-
-        # 查询评论是否被自己点赞
-        CommentLike = leancloud.Object.extend('CommentLike')
-        query = CommentLike.query
-        query.equal_to("comment", i)
-        query.equal_to("likeUser", current_user)
-        query_list = query.find()
-        if len(query_list) <= 0:
-            isLiked = False
-        else:
-            isLiked = True
-
-        comments.append({
-            "id": i.id,
-            "avatar": avatar,
-            "nickname": nickname,
-            "date": i.get("createAt"),
-            "likeNum": i.get("thumbs"),
-            "content": i.get("content"),
-            "isLiked": isLiked
-        })
+    # for i in query_list:
+    #     User = leancloud.Object.extend("_User")
+    #     user = User.create_without_data(i.get("comment_user").id)
+    #     user.fetch()
+    #     avatar = user.get("avatar")
+    #     if avatar:
+    #         avatar_url = avatar.url
+    #     else:
+    #         avatar_url = None
+    #     authorid = user.id
+    #     nickname = user.get("nickname")
+    #     avatar = avatar_url
+    #
+    #     # 查询评论是否被自己点赞
+    #     CommentLike = leancloud.Object.extend('CommentLike')
+    #     query = CommentLike.query
+    #     query.equal_to("comment", i)
+    #     query.equal_to("likeUser", current_user)
+    #     query_list = query.find()
+    #     if len(query_list) <= 0:
+    #         isLiked = False
+    #     else:
+    #         isLiked = True
+    #
+    #     comments.append({
+    #         "id": i.id,
+    #         "avatar": avatar,
+    #         "nickname": nickname,
+    #         "date": datetime.datetime.now(),
+    #         "likeNum": 0,
+    #         "content": i.get("content"),
+    #         "isLiked": isLiked
+    #     })
 
     result = {
-        "id" : id,
+        "id": id,
         "title": title,
         "content": content,
         "author": author,
@@ -344,7 +345,7 @@ def publishTravelNote(**params):
         # 通过这个用户找到导游信息
         Guide = leancloud.Object.extend('Guide')
         query = Guide.query
-        query.equal_to("user",user)
+        query.equal_to("user", user)
         query_list = query.find()
         if len(query_list) <= 0:
             return {
@@ -370,10 +371,11 @@ def publishTravelNote(**params):
             "code": 0,
             "id": newTravelNote.id
         }
-    except:
+    except Exception as e:
+        print e.message
         return {
             "code": -1,
-            "msg": "Failed. Please check if you have logged in"
+            "msg": e.message
         }
 
 
@@ -456,6 +458,7 @@ def getTravelNoteFromFollowee(**params):
         }
         return result
 
+
 @travelNote_engine.define
 def likeTravelNote(**params):
     try:
@@ -470,8 +473,8 @@ def likeTravelNote(**params):
     TravelNoteLike = leancloud.Object.extend("TravelNoteLike")
     if like == 'true':
         travelNoteLike = TravelNoteLike()
-        travelNoteLike.set("TravelNote",travelNote)
-        travelNoteLike.set("likeUser",current_user)
+        travelNoteLike.set("TravelNote", travelNote)
+        travelNoteLike.set("likeUser", current_user)
         travelNoteLike.save()
     elif like == 'false':
         travelNoteLike = TravelNoteLike()
@@ -506,8 +509,8 @@ def favTravelNote(**params):
     TravelNoteFav = leancloud.Object.extend("TravelNoteFav")
     if like == 'true':
         travelNoteFav = TravelNoteFav()
-        travelNoteFav.set("TravelNote",travelNote)
-        travelNoteFav.set("favUser",current_user)
+        travelNoteFav.set("TravelNote", travelNote)
+        travelNoteFav.set("favUser", current_user)
         travelNoteFav.save()
     elif like == 'false':
         travelNoteFav = TravelNoteFav()
@@ -527,6 +530,7 @@ def favTravelNote(**params):
         "status": 0,
     }
 
+
 @travelNote_engine.define
 def commentTravelNote(**params):
     try:
@@ -540,14 +544,15 @@ def commentTravelNote(**params):
     travelNote.fetch()
     Comment = leancloud.Object.extend("Comment")
     comment = Comment()
-    comment.set("TravelNote",travelNote)
-    comment.set("comment_user",current_user)
-    comment.set("content",content)
+    comment.set("TravelNote", travelNote)
+    comment.set("comment_user", current_user)
+    comment.set("content", content)
     comment.save()
 
     return {
         "status": 0,
     }
+
 
 @travelNote_engine.define
 def likeComment(**params):
@@ -563,8 +568,8 @@ def likeComment(**params):
     CommentLike = leancloud.Object.extend("CommentLike")
     if like == 'true':
         commentLike = CommentLike()
-        commentLike.set("comment",comment)
-        commentLike.set("likeUser",current_user)
+        commentLike.set("comment", comment)
+        commentLike.set("likeUser", current_user)
         commentLike.save()
     elif like == 'false':
         commentLike = CommentLike()
@@ -584,11 +589,12 @@ def likeComment(**params):
         "status": 0,
     }
 
+
 @travelNote_engine.define
 def getAttraction(**params):
     try:
         city = params.get('city')
-        page = params.get('page',0)
+        page = params.get('page', 0)
     except:
         raise LeanEngineError(501, 'Invalid argument.')
 
@@ -611,6 +617,7 @@ def getAttraction(**params):
         "array": array,
     }
     return result
+
 
 @travelNote_engine.define
 def searchAttraction(**params):
@@ -638,8 +645,6 @@ def searchAttraction(**params):
         "array": array,
     }
     return result
-
-
 
 # @travelNote_engine.define
 # def getTravelNoteByTag(**params):
